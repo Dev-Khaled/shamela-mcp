@@ -571,7 +571,9 @@ export async function runVerifyQuote(
             const resolved = new CatalogScope(catalog).resolveBookIds(scopeInput);
             if (resolved.book_ids.length === 0) throw emptyScope(resolved.diagnostics);
             scopeBookKeys = resolved.book_ids.map(String);
-            searchedBooks = resolved.book_ids.length;
+            // A scope resolves against the CATALOGUE; books not on the disk
+            // have no pages in the index, so they were not searched.
+            searchedBooks = resolved.book_ids.filter((id) => catalog.isDownloaded(id)).length;
             scoped = true;
         }
         const hits = await candidatesFor(scopeBookKeys);

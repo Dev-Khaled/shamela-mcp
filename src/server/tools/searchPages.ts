@@ -176,6 +176,7 @@ export async function runSearchPages(
 ): Promise<RenderedResponse<SearchPagesOutput>> {
     let scopeBookKeys: string[] | null = null;
     let scopeCount = -1;
+    let scopeDownloaded = -1;
     if (args.scope) {
         const scopeInput: ScopeInputType = {
             ...(args.scope as ScopeInputType),
@@ -185,6 +186,10 @@ export async function runSearchPages(
         if (resolved.book_ids.length === 0) throw emptyScope(resolved.diagnostics);
         scopeBookKeys = resolved.book_ids.map(String);
         scopeCount = resolved.book_ids.length;
+        // A scope resolves against the CATALOGUE, so it names books that may
+        // not be on the disk; the index holds no page of those, so they were
+        // not searched. scope_count keeps the scope's own size.
+        scopeDownloaded = resolved.book_ids.filter((id) => catalog.isDownloaded(id)).length;
     }
 
     const raw = await helper.request<RawEnvelope>("search_pages", {
@@ -255,7 +260,7 @@ export async function runSearchPages(
         normalized_tokens: raw.normalized_tokens,
         scope_count: scopeCount,
         searched: {
-            books: scopeCount >= 0 ? scopeCount : downloadedTotal,
+            books: scopeDownloaded >= 0 ? scopeDownloaded : downloadedTotal,
             downloaded_total: downloadedTotal,
             scoped: scopeCount >= 0,
         },

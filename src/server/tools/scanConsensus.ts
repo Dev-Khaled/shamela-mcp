@@ -212,7 +212,10 @@ export async function runScanConsensus(
         const resolved = new CatalogScope(catalog).resolveBookIds(scopeInput);
         if (resolved.book_ids.length === 0) throw emptyScope(resolved.diagnostics);
         scopeBookKeys = resolved.book_ids.map(String);
-        searchedBooks = resolved.book_ids.length;
+        // A scope resolves against the CATALOGUE, so it names books that may
+        // not be on the disk; the index holds no page of those, so they were
+        // not searched. Same intersection as researchScope.
+        searchedBooks = resolved.book_ids.filter((id) => catalog.isDownloaded(id)).length;
     }
 
     const L = pick(scanConsensusLabels);
